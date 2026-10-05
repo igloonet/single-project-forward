@@ -1,27 +1,19 @@
-require_dependency 'welcome_controller'  
+# frozen_string_literal: true
 
+module SingleProjectForward
+  module WelcomeControllerPatch
+    def index
+      # Only redirect logged-in users
+      if User.current.logged?
+        projects = Project.visible.active.to_a
 
-module ForwardIfSingleWelcomeControllerPatch
-  def self.included(base) # :nodoc:
-    base.send(:include, InstanceMethods)
-
-    base.class_eval do
-      unloadable # Send unloadable so it will not be unloaded in development
-      alias_method_chain :index, :forward_if_single
-    end
-  end
-
-  module InstanceMethods
-    # Adds a rates tab to the user administration page
-    def index_with_forward_if_single
-      tabs = index_without_forward_if_single
-      scope = Project.visible.sorted
-      @projects = scope.active.to_a
-      if @projects.length == 1
-        redirect_to(:controller => "projects", :action => "show", :id => @projects.first)
-        return false
+        if projects.length == 1
+          redirect_to project_path(projects.first)
+          return
+        end
       end
+
+      super
     end
   end
 end
-
